@@ -12,36 +12,31 @@ public class JinahyaSubscription implements Subscription {
     // -----------------------------------------------------------------------------------------------------------------
     public JinahyaSubscription(final LongConsumer requestConsumer, final Consumer<Void> cancellationConsumer) {
         super();
-        if (requestConsumer == null) {
-            throw new NullPointerException("requestConsumer is null");
-        }
-        if (cancellationConsumer == null) {
-            throw new NullPointerException("cancellationConsumer is null");
-        }
-        this.requestConsumer = n -> {
-            if (cancelled) {
-                throw new IllegalStateException("cancelled");
-            }
-            requestConsumer.accept(n);
-        };
-        this.cancellationConsumer = v -> {
-            if (cancelled) {
-                throw new IllegalStateException("already cancelled");
-            }
-            cancelled = true;
-            cancellationConsumer.accept(null);
-        };
+        this.requestConsumer = requireNonNull(requestConsumer, "requestConsumer is null");
+        this.cancellationConsumer = requireNonNull(cancellationConsumer, "cancellationConsumer is null");
     }
 
     // -----------------------------------------------------------------------------------------------------------------
     @Override
     public void request(final long n) {
+        if (cancelled) {
+            throw new IllegalStateException("cancelled");
+        }
         requestConsumer.accept(n);
     }
 
     @Override
     public void cancel() {
+        if (cancelled) {
+            throw new IllegalStateException("already cancelled");
+        }
+        cancelled = true;
         cancellationConsumer.accept(null);
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    public boolean isCancelled() {
+        return cancelled;
     }
 
     // -----------------------------------------------------------------------------------------------------------------
