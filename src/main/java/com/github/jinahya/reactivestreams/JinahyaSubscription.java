@@ -7,7 +7,7 @@ import java.util.function.LongConsumer;
 
 import static java.util.Objects.requireNonNull;
 
-public class JinahyaSubscription implements Subscription {
+class JinahyaSubscription implements Subscription {
 
     // -----------------------------------------------------------------------------------------------------------------
 
@@ -17,7 +17,7 @@ public class JinahyaSubscription implements Subscription {
      * @param requestConsumer      a consumer to be accepted with the argument of {@link Subscription#request(long)}.
      * @param cancellationConsumer a consumer to be notified when {@link Subscription#cancel()} is invoked.
      */
-    public JinahyaSubscription(final LongConsumer requestConsumer, final Consumer<Void> cancellationConsumer) {
+    JinahyaSubscription(final LongConsumer requestConsumer, final Consumer<Void> cancellationConsumer) {
         super();
         this.requestConsumer = requireNonNull(requestConsumer, "requestConsumer is null");
         this.cancellationConsumer = requireNonNull(cancellationConsumer, "cancellationConsumer is null");

@@ -7,12 +7,12 @@ import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
-public class JinahyaSubscriber<T> implements Subscriber<T> {
+class JinahyaSubscriber<T> implements Subscriber<T> {
 
     // -----------------------------------------------------------------------------------------------------------------
-    public JinahyaSubscriber(final Consumer<? super Subscription> subscriptionConsumer,
-                             final Consumer<? super T> dataConsumer, final Consumer<? super Throwable> errorConsumer,
-                             final Consumer<? super Void> completionConsumer) {
+    JinahyaSubscriber(final Consumer<? super Subscription> subscriptionConsumer,
+                      final Consumer<? super T> dataConsumer, final Consumer<? super Throwable> errorConsumer,
+                      final Consumer<? super Void> completionConsumer) {
         super();
         this.subscriptionConsumer = requireNonNull(subscriptionConsumer, "subscriptionConsumer is null");
         this.dataConsumer = requireNonNull(dataConsumer, "dataConsumer is null");
