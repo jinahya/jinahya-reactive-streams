@@ -19,6 +19,7 @@ public final class JinahyaSubscriptionUtils {
      *
      * @param requestConsumer      a consumer to be accepted with the argument of {@link Subscription#request(long)}.
      * @param cancellationConsumer a consumer to be notified when {@link Subscription#cancel()} is invoked.
+     * @return a new instance of {@link Subscription}.
      */
     public static Subscription newSubscriptionFrom(final LongConsumer requestConsumer,
                                                    final Consumer<Void> cancellationConsumer) {
