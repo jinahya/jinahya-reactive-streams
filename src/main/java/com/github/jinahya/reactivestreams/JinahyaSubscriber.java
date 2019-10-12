@@ -7,12 +7,12 @@ import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
-public abstract class AbstractSubscriber<T> implements Subscriber<T> {
+public class JinahyaSubscriber<T> implements Subscriber<T> {
 
     // -----------------------------------------------------------------------------------------------------------------
-    public AbstractSubscriber(final Consumer<Subscription> subscriptionConsumer,
-                              final Consumer<? super T> dataConsumer, final Consumer<? super Throwable> errorConsumer,
-                              final Consumer<Void> completionConsumer) {
+    public JinahyaSubscriber(final Consumer<Subscription> subscriptionConsumer,
+                             final Consumer<? super T> dataConsumer, final Consumer<? super Throwable> errorConsumer,
+                             final Consumer<Void> completionConsumer) {
         super();
         if (subscriptionConsumer == null) {
             throw new NullPointerException("subscriptionConsumer is null");
