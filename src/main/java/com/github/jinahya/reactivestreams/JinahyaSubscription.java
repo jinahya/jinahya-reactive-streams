@@ -18,7 +18,12 @@ public class JinahyaSubscription implements Subscription {
         if (cancellationConsumer == null) {
             throw new NullPointerException("cancellationConsumer is null");
         }
-        this.requestConsumer = requireNonNull(requestConsumer, "requestConsumer is null")
+        this.requestConsumer = n -> {
+            if (cancelled) {
+                throw new IllegalStateException("cancelled");
+            }
+            requestConsumer.accept(n);
+        };
         this.cancellationConsumer = v -> {
             if (cancelled) {
                 throw new IllegalStateException("already cancelled");
