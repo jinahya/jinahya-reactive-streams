@@ -2,6 +2,8 @@ package com.github.jinahya.reactivestreams;
 
 import org.reactivestreams.Subscription;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 
@@ -14,11 +16,14 @@ class JinahyaSubscription implements Subscription {
     /**
      * Creates a new instance with specified consumers.
      *
+     * @param subscriptionContext  a subscription context.
      * @param requestConsumer      a consumer to be accepted with the argument of {@link Subscription#request(long)}.
      * @param cancellationConsumer a consumer to be notified when {@link Subscription#cancel()} is invoked.
      */
-    JinahyaSubscription(final LongConsumer requestConsumer, final Consumer<Void> cancellationConsumer) {
+    JinahyaSubscription(final SubscriptionContext subscriptionContext, final LongConsumer requestConsumer,
+                        final Consumer<Void> cancellationConsumer) {
         super();
+        this.subscriptionContext = requireNonNull(subscriptionContext, "subscriptionContext is null");
         this.requestConsumer = requireNonNull(requestConsumer, "requestConsumer is null");
         this.cancellationConsumer = requireNonNull(cancellationConsumer, "cancellationConsumer is null");
     }
@@ -35,12 +40,19 @@ class JinahyaSubscription implements Subscription {
     @Override
     public void request(final long n) {
         if (n <= 0) {
-            throw new IllegalArgumentException("n(" + n + ") <= 0");
+            subscriptionContext.signalError(new IllegalArgumentException("n(" + n + ") <= 0"));
+            return;
         }
-        if (cancelled) {
-            throw new IllegalStateException("already cancelled");
+        cancellationLock.lock();
+        try {
+            if (cancelled) {
+                subscriptionContext.signalError(new IllegalStateException("already cancelled"));
+                return;
+            }
+            requestConsumer.accept(n);
+        } finally {
+            cancellationLock.unlock();
         }
-        requestConsumer.accept(n);
     }
 
     /**
@@ -50,29 +62,28 @@ class JinahyaSubscription implements Subscription {
      */
     @Override
     public void cancel() {
-        if (cancelled) {
-            throw new IllegalStateException("already cancelled");
+        cancellationLock.lock();
+        try {
+            if (cancelled) { // idempotent
+                return;
+            }
+            cancelled = true;
+            cancellationConsumer.accept(null);
+        } finally {
+            cancellationLock.unlock();
         }
-        cancelled = true;
-        cancellationConsumer.accept(null);
     }
 
     // -----------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Indicates whether this subscription is already cancelled or not.
-     *
-     * @return {@code} true if this subscription is cancelled; {@code false} otherwise.
-     */
-    protected boolean isCancelled() {
-        return cancelled;
-    }
+    private final SubscriptionContext subscriptionContext;
 
     // -----------------------------------------------------------------------------------------------------------------
     private final LongConsumer requestConsumer;
 
     // -----------------------------------------------------------------------------------------------------------------
-    private transient boolean cancelled;
-
     private final Consumer<Void> cancellationConsumer;
+
+    private volatile boolean cancelled;
+
+    private final Lock cancellationLock = new ReentrantLock();
 }

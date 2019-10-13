@@ -3,6 +3,7 @@ package com.github.jinahya.reactivestreams;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -27,10 +28,10 @@ public final class JinahyaSubscriberUtils {
      *                             Subscriber#onComplete()} method is invoked.
      * @param <T>                  data type parameter
      * @return an instance of {@link Subscriber}.
-     * @see #newSubscriberFrom(Consumer, Consumer, Consumer, Runnable)
+     * @see #newSubscriberFrom(Consumer, BiConsumer, Consumer, Runnable)
      */
     public static <T> Subscriber<T> newSubscriberFrom(final Consumer<? super Subscription> subscriptionConsumer,
-                                                      final Consumer<? super T> dataConsumer,
+                                                      final BiConsumer<? super Subscription, ? super T> dataConsumer,
                                                       final Consumer<? super Throwable> errorConsumer,
                                                       final Consumer<? super Void> completionConsumer) {
         return new JinahyaSubscriber<>(subscriptionConsumer, dataConsumer, errorConsumer, completionConsumer);
@@ -48,10 +49,10 @@ public final class JinahyaSubscriberUtils {
      * @param completionRunner     a runnable run when {@link Subscriber#onComplete()} method is invoked.
      * @param <T>                  data type parameter
      * @return an instance of {@link Subscriber}.
-     * @see #newSubscriberFrom(Consumer, Consumer, Consumer, Consumer)
+     * @see #newSubscriberFrom(Consumer, BiConsumer, Consumer, Consumer)
      */
     public static <T> Subscriber<T> newSubscriberFrom(final Consumer<? super Subscription> subscriptionConsumer,
-                                                      final Consumer<? super T> dataConsumer,
+                                                      final BiConsumer<? super Subscription, ? super T> dataConsumer,
                                                       final Consumer<? super Throwable> errorConsumer,
                                                       final Runnable completionRunner) {
         return newSubscriberFrom(subscriptionConsumer, dataConsumer, errorConsumer, v -> completionRunner.run());
