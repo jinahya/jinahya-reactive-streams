@@ -10,13 +10,13 @@ import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
-public class JinahyaSubscriber<T> implements Subscriber<T> {
+class JinahyaSubscriber2<T> implements Subscriber<T> {
 
     // -----------------------------------------------------------------------------------------------------------------
-    JinahyaSubscriber(final Consumer<? super Subscription> subscriptionConsumer,
-                      final BiConsumer<? super Subscription, ? super T> dataConsumer,
-                      final Consumer<? super Throwable> errorConsumer,
-                      final Consumer<? super Void> completionConsumer) {
+    JinahyaSubscriber2(final Consumer<? super Subscription> subscriptionConsumer,
+                       final BiConsumer<? super Subscription, ? super T> dataConsumer,
+                       final Consumer<? super Throwable> errorConsumer,
+                       final Consumer<? super Void> completionConsumer) {
         super();
         this.subscriptionConsumer = requireNonNull(subscriptionConsumer, "subscriptionConsumer is null");
         this.dataConsumer = requireNonNull(dataConsumer, "dataConsumer is null");
@@ -33,10 +33,11 @@ public class JinahyaSubscriber<T> implements Subscriber<T> {
      */
     @Override
     public void onSubscribe(final Subscription s) {
+        if (s == null) {
+            throw new NullPointerException("s is null");
+        }
         subscriptionLock.lock();
         try {
-            // > A `Subscriber` MUST call `Subscription.cancel()` on the given `Subscription`
-            // > after an `onSubscribe` signal if it already has an active `Subscription`.
             if (subscription != null) {
                 s.cancel();
                 return;
@@ -55,7 +56,18 @@ public class JinahyaSubscriber<T> implements Subscriber<T> {
      */
     @Override
     public void onNext(final T t) {
-        dataConsumer.accept(subscription, t);
+        if (t == null) {
+            throw new NullPointerException("t is null");
+        }
+        subscriptionLock.lock();
+        try {
+            if (subscription == null) {
+                throw new IllegalStateException("not subscribed yet");
+            }
+            dataConsumer.accept(subscription, t);
+        } finally {
+            subscriptionLock.unlock();
+        }
     }
 
     /**
@@ -65,23 +77,40 @@ public class JinahyaSubscriber<T> implements Subscriber<T> {
      */
     @Override
     public void onError(final Throwable t) {
-        assert !completed;
-        assert error == null;
+        if (t == null) {
+            throw new NullPointerException("t is null");
+        }
+        if (subscription == null) {
+            throw new IllegalStateException("not subscribed yet");
+        }
+        if (completed) {
+            throw new IllegalStateException("already completed");
+        }
+        if (error != null) {
+            throw new IllegalStateException("already errored: " + error);
+        }
+        subscription = null;
         error = t;
         errorConsumer.accept(error);
-        subscription = null;
     }
 
     /**
-     * Notifies this subscriber that there is no more data to publish.
+     * Notifies this subscriber that there is not more data to publish.
      */
     @Override
     public void onComplete() {
-        assert !completed;
-        assert error == null;
+        if (subscription == null) {
+            throw new IllegalStateException("not subscribed yet");
+        }
+        if (error != null) {
+            throw new IllegalStateException("already errored");
+        }
+        if (completed) {
+            throw new IllegalStateException("already completed");
+        }
+        subscription = null;
         completed = true;
         completionConsumer.accept(null);
-        subscription = null;
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -113,12 +142,12 @@ public class JinahyaSubscriber<T> implements Subscriber<T> {
     private final BiConsumer<? super Subscription, ? super T> dataConsumer;
 
     // -----------------------------------------------------------------------------------------------------------------
-    private volatile Throwable error;
+    private transient Throwable error;
 
     private final Consumer<? super Throwable> errorConsumer;
 
     // -----------------------------------------------------------------------------------------------------------------
-    private volatile boolean completed;
+    private transient boolean completed;
 
     private final Consumer<? super Void> completionConsumer;
 }
